@@ -1,4 +1,5 @@
 import argparse
+import importlib
 import os
 import inspect
 from openai import OpenAI
@@ -6,74 +7,129 @@ from dotenv import load_dotenv
 import re
 
 # Load environment variables and initialize the OpenAI client
-load_dotenv("../.env")
+load_dotenv("./.env")
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 shot_1 = """
-    @startuml
-    !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
-    title Component diagram for Internet Banking System - API Application
-    Component("bot", "Bot", "Python", "Represents the trading bot")
-    Component("bot_control_component", "Bot Control", "Python", "Controls the execution of the trading bot and scheduling")
-    Component("data_retrieval_component", "Data Retrieval", "Python", "Responsible for fetching data from external APIs or blockchain")
-    Component("scheduled_bot", "Scheduled Bot", "Python", "Represents the scheduled bot")
-    Component("trading_operations_component", "Trading Operations", "Python", "Handles trading operations such as fetching position, opening and closing positions")
-    Rel("bot_control_component", "bot", "Executes", "Component")
-    Rel("bot_control_component", "scheduled_bot", "Schedules", "Component")
-    Rel("bot_control_component", "data_retrieval_component", "Uses", "Component")
-    Rel("trading_operations_component", "data_retrieval_component", "Uses", "Component")
-    Rel("bot_control_component", "trading_operations_component", "Uses", "Component")
-    @enduml
+workspace {
+  model {
+    properties {
+      "structurizr.groupSeparator" "/"
+    }
+    main_system = SoftwareSystem "Main System" "Main system handling all operations" {
+      main_container = Container "Main Container" "Primary container for all components" {
+        calculate_checksum = Component "calculate_checksum" "Calculate checksum of downloaded file" {
+          technology "python"
+        }
+        download_file = Component "download_file" "Download the file from URL" {
+          technology "python"
+        }
+        get_checksum_from_s3 = Component "get_checksum_from_s3" "Get the checksum from S3" {
+          technology "python"
+        }
+        main = Component "main" "Main Application" {
+          technology "python"
+        }
+        match_file_to_s3_folder = Component "match_file_to_s3_folder" "Match the filename with the S3 folder" {
+          technology "python"
+        }
+        process_files_if_checksum_differs = Component "process_files_if_checksum_differs" "Process files if their checksum is different" {
+          technology "python"
+        }
+        unzip_file = Component "unzip_file" "Unzip the download file" {
+          technology "python"
+        }
+        upload_checksum_to_s3 = Component "upload_checksum_to_s3" "Upload the checksum to S3" {
+          technology "python"
+        }
+        upload_file_to_s3 = Component "upload_file_to_s3" "Upload the file to S3" {
+          technology "python"
+        }
+      }
+    }
+    download_file -> main "Downloading Files" "Component"
+    main -> download_file "Uses" "Component"
+    main -> calculate_checksum "Uses" "Component"
+    main -> get_checksum_from_s3 "Uses" "Component"
+    main -> process_files_if_checksum_differs "Uses" "Component"
+    match_file_to_s3_folder -> main "Matching Files" "Component"
+    process_files_if_checksum_differs -> unzip_file "Uses" "Component"
+    process_files_if_checksum_differs -> upload_file_to_s3 "Uses" "Component"
+    upload_checksum_to_s3 -> main "Uploading Check Sum" "Component"
+    upload_file_to_s3 -> main "Uploading Files" "Component"
+  }
+  views {
+    styles {
+      element "Element" {
+        shape "RoundedBox"
+      }
+      element "Software System" {
+        background "#1168bd"
+        color "#ffffff"
+      }
+      element "Container" {
+        background "#438dd5"
+        color "#ffffff"
+      }
+      element "Component" {
+        background "#85bbf0"
+        color "#000000"
+      }
+      element "Person" {
+        background "#08427b"
+        color "#ffffff"
+        shape "Person"
+      }
+      element "Infrastructure Node" {
+        background "#ffffff"
+      }
+      element "database" {
+        shape "Cylinder"
+      }
+    }
+  }
+}
+
     """
 shot_2 = """
-    @c4_element('Component', label="Data Retrieval", technology="Python",
-                description="Responsible for fetching data from external APIs or blockchain")
+    @c4_element('Component', label="Data Retrieval", technology="Python", description="Responsible for fetching data from external APIs and processes")
     def data_retrieval_component():
         pass
     
-    # Trading Operations Component
-    @c4_element('Component', label="Trading Operations", technology="Python",
-                description="Handles trading operations such as fetching position, opening and closing positions")
-    def trading_operations_component():
+    @c4_element('Component', label="S3 Actions", technology="Python", description="Handles S3 bucket interactions such as creating, deleting, and uploading objects")
+    def s3_actions_component():
         pass
     
-    # Bot Control Component
-    @c4_element('Component', label="Bot Control", technology="Python",
-                description="Controls the execution of the trading bot and scheduling")
-    def bot_control_component():
+    @c4_element('Component', label="Zip File Actions", technology="Python", description="Handles actions on zip file such as downloading and unzipping")
+    def zip_file_actions_component():
         pass
     
-    # Bot Component
-    @c4_element('Component', label="Bot", technology="Python",
-                description="Represents the trading bot")
-    def bot():
+    @c4_element('Component', label="Checksum Actions", technology="Python", description="Handles checksum comparisons and uploads checksums")
+    def checksum_actions_component():
         pass
     
-    # Scheduled Bot Component
-    @c4_element('Component', label="Scheduled Bot", technology="Python",
-                description="Represents the scheduled bot")
-    def scheduled_bot():
+    @c4_element('Component', label="Main", technology="Python", description="Runs the main execution of the script")
+    def main_component():
         pass
     
-    # Relationships
-    @c4_relationship('bot_control_component', 'data_retrieval_component', "Uses", "Component")
+    @c4_relationship('main_component', 'data_retrieval_component', "Uses", "Component")
     def uses_relationship1():
         pass
     
-    @c4_relationship('trading_operations_component', 'data_retrieval_component', "Uses", "Component")
+    @c4_relationship('data_retrieval_component', 's3_actions_component', "Uses", "Component")
     def uses_relationship2():
         pass
     
-    @c4_relationship('bot_control_component', 'trading_operations_component', "Uses", "Component")
+    @c4_relationship('s3_actions_component', 'zip_file_actions_component', "Uses", "Component")
     def uses_relationship3():
         pass
     
-    @c4_relationship('bot_control_component', 'bot', "Executes", "Component")
-    def executes_relationship1():
+    @c4_relationship('zip_file_actions_component', 'checksum_actions_component', "Uses", "Component")
+    def uses_relationship4():
         pass
     
-    @c4_relationship('bot_control_component', 'scheduled_bot', "Schedules", "Component")
-    def schedules_relationship1():
+    @c4_relationship('checksum_actions_component', 'main_component', "Updates", "Component")
+    def uses_relationship5():
         pass
     """
 
@@ -106,15 +162,27 @@ def generate_annotations(source_code):
     """Generates annotations for a given source code using OpenAI's API, handling large inputs by splitting them into chunks."""
     responses = []
     prompt = (
-        f"Do not add comments. Examine code and figure out Components and the relationships between them. Look at {shot_2} as a reference to add decorators. Use @c4_relationship for relationships and @c4_element for components. DO A STEP BY STEP ANALYSIS AND FIGURE OUT RELATIONSHIPS BETWEEN COMPONENTS. ADD THE DECORATORS TO THIS CODE {source_code}. DO NOT CHANGE ANYTHING OTHER THEN ADDING DOCORATORS."
-        f"Here is the example plantuml code that is being created: {shot_1}")
+        f"YOU ARE NOT A HELPFUL ASSISTANT. JUST RESPOND IN CODE. DO NOT ADD EXPLANATIONS OR COMMENTS. Examine code and figure out Components and the relationships between them and how they should be organized"
+        f"in containers. Look at this code on how to add decorators: {shot_2}. "
+        f"Extract meaning from method name to create title. For example, if method name is 'download_file' name should be 'Downloads File'."
+        f"Extract meaning from method description to create description. For example, if method name is 'download_file' description should be 'Downloads file from external source'."
+        f"match_file_to_s3_folder should be 'Match File to S3 Folder'. "
+        f"Use that and related elements to create description. "
+        f"Here is a working example dsl code that is being created: {shot_1}"
+        f"USE 'uses' FOR DEPENDANCIES, 'updates' FOR UPDATES."
+        f"BE VERY CONSISTENT AND FORMAL WITH YOUR DECISIONS."
+        f" DO NOT MAKE UP DIFFERENT FORMATING OF DECORATORS,"
+        f"JUST CHANGE VALUES. Use @c4_relationship for relationships and @c4_element for components. DO NOT INCLUDE COMPONENTS AND RELATIONSHIPS WHICH ARE NOT "
+        f" DO A STEP BY STEP ANALYSIS AND FIGURE OUT RELATIONSHIPS BETWEEN COMPONENTS. ADD THE DECORATORS TO THIS CODE {source_code}. "
+        f"DO NOT CHANGE ANYTHING OTHER THEN ADDING DOCORATORS."
+        )
     chunks = split_text_into_chunks(prompt)
 
     for chunk in chunks:
         response = client.chat.completions.create(
             model="gpt-4",
             messages=[
-                {"role": "system", "content": "YOU ONLY RESPOND IN CODE WITH NO OTHER COMMENTS. FIGURE OUT THE "
+                {"role": "system", "content": "YOU ONLY RESPOND IN CODE WITH NO OTHER EXPLANATIONS OR COMMENTS. FIGURE OUT THE "
                                               "RELATIONSHIPS BETWEEN COMPONENTS. Add 'pass' after each method so it "
                                               "doesn't cause errors."},
                 {"role": "user", "content": chunk}
@@ -203,7 +271,6 @@ def workspace_to_dsl(workspace):
 
 from pystructurizr.dsl import Workspace, Model, Component, Container, Person, SoftwareSystem
 
-
 def generate_structurizr_dsl(elements, relationships):
     workspace = Workspace()
     model = Model(name='Application')
@@ -212,23 +279,34 @@ def generate_structurizr_dsl(elements, relationships):
     main_system = SoftwareSystem(name="Main System", description="Main system handling all operations")
     model.elements.append(main_system)
 
-    main_container = Container(name="Main Container", description="Primary container for all components")
+    # Extract container name from module name
+    container_name = __name__.split('.')[-1] + " Container"  # Assuming the module name gives a meaningful container name
+
+    main_container = Container(name=container_name, description="Primary container for all components")
     main_system.elements.append(main_container)
 
-    # Create components and add to the main container
+    # Create a mapping from function names to labels for easier access
+    name_to_label = {el_name: el_func.c4_details.get('label', el_name) for el_name, el_func in elements.items()}
+
+    # Create components and add to the main container using the 'label' for the component name
     for el_name, el_func in elements.items():
         el_details = el_func.c4_details
-        component = Component(name=el_name, description=el_details['description'], technology=el_details.get('technology', 'Python'))
+        component_label = name_to_label[el_name]  # Get label from mapping
+        component = Component(name=component_label, description=el_details['description'], technology=el_details.get('technology', 'Python'))
         main_container.elements.append(component)
 
-    # Assuming relationships need to be added here; adjust as necessary
+    # Adjust relationships to use labels
     for rel in relationships:
-        source = next((comp for comp in main_container.elements if comp.name == rel['source']), None)
-        target = next((comp for comp in main_container.elements if comp.name == rel['target']), None)
-        if source and target:
-            source.uses(target, description=rel.get('description', ''), technology=rel.get('technology', ''))
+        source_label = name_to_label.get(rel['source'], rel['source'])  # Get source label from mapping, fallback to source name
+        target_label = name_to_label.get(rel['target'], rel['target'])  # Get target label from mapping, fallback to target name
+        source_component = next((comp for comp in main_container.elements if comp.name == source_label), None)
+        target_component = next((comp for comp in main_container.elements if comp.name == target_label), None)
+        if source_component and target_component:
+            source_component.uses(target_component, description=rel.get('description', ''), technology=rel.get('technology', ''))
 
     return workspace
+
+
 
 
 # Example usage:
@@ -328,7 +406,7 @@ def main():
 
     # Attempt to import the module
     try:
-        module = __import__(module_name)
+        module = importlib.import_module(module_name)
     except ModuleNotFoundError:
         print(f"Error: No module named '{module_name}' found.")
         return
@@ -336,8 +414,13 @@ def main():
     elements, relationships = None, None  # Initialize these to None to handle possible checks later
 
     if args.generate_annotations:
+        imports = 'from dags.compare_nursing_home.app.scripts.py.c4_maker import c4_element, c4_relationship \n'
         source_code = inspect.getsource(module)
-        generate_annotations(source_code)
+        annotation_code = generate_annotations(source_code)
+        output_filename = f'{module_name}_updated.py'
+        with open(output_filename, 'w') as file:
+            file.write(imports + annotation_code)
+        print(f"Annotated code written to {output_filename}")
 
     # Check if any diagram generation is requested
     if args.generate_plantuml or args.generate_structurizr:
