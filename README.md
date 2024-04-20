@@ -20,7 +20,7 @@ Before you run the script, ensure you have the following installed:
 
 ## Installation
 
-1. Clone this repository or download `c4_maker.py` directly.
-2. Install the required Python libraries:
-   ```bash
-   pip install openai python-dotenv
+Install directly from source:
+
+```bash
+pip install .
